@@ -5,6 +5,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -22,9 +23,9 @@ import androidx.compose.ui.unit.sp
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ContactsScreen(
-    onNavigateToChat: () -> Unit,
-    onNavigateToCall: () -> Unit,
-    onNavigateToProfile: () -> Unit,
+    onNavigateToChat: (Int) -> Unit,
+    onNavigateToCall: (Int) -> Unit,
+    onNavigateToProfile: (Int) -> Unit,
     onNavigateToSettings: () -> Unit,
     onNavigateToChats: () -> Unit
 ) {
@@ -64,22 +65,31 @@ fun ContactsScreen(
                 2 -> {
                     // Contacts tab
                     LazyColumn(modifier = Modifier.fillMaxSize().padding(16.dp)) {
-                        items(5) { index ->
+                        items(AppState.contacts) { contact ->
                             ContactCard(
-                                name = "Contact Name",
-                                isOnline = index % 2 == 0,
-                                onCardClick = onNavigateToProfile,
-                                onCallClick = onNavigateToCall,
-                                onVideoCallClick = onNavigateToCall  // FIX: video -> incall
+                                contact = contact,
+                                onCardClick = { onNavigateToProfile(contact.id) },
+                                onCallClick = { onNavigateToCall(contact.id) },
+                                onVideoCallClick = { onNavigateToCall(contact.id) }
                             )
                             Spacer(modifier = Modifier.height(16.dp))
                         }
                     }
                 }
                 1 -> {
-                    // Calls tab placeholder
-                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Text("Calls history", color = Color.Gray)
+                    // Calls tab 
+                    LazyColumn(modifier = Modifier.fillMaxSize()) {
+                        if (AppState.callLog.isEmpty()) {
+                            item {
+                                Box(modifier = Modifier.fillParentMaxSize(), contentAlignment = Alignment.Center) {
+                                    Text("No recent calls", color = Color.Gray)
+                                }
+                            }
+                        } else {
+                            items(AppState.callLog) { call ->
+                                CallLogItem(call)
+                            }
+                        }
                     }
                 }
             }
@@ -88,9 +98,30 @@ fun ContactsScreen(
 }
 
 @Composable
+fun CallLogItem(call: CallRecord) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(16.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(
+            if (call.isOutgoing) Icons.Default.CallMade else Icons.Default.CallReceived,
+            contentDescription = null,
+            tint = if (call.isOutgoing) Color.Green else Color.Red
+        )
+        Spacer(modifier = Modifier.width(16.dp))
+        Column(modifier = Modifier.weight(1f)) {
+            Text(text = call.contactName, fontWeight = FontWeight.Bold)
+            Text(text = "${call.time} • Duration: ${call.duration}", fontSize = 12.sp, color = Color.Gray)
+        }
+    }
+    HorizontalDivider(modifier = Modifier.padding(start = 56.dp))
+}
+
+@Composable
 fun ContactCard(
-    name: String,
-    isOnline: Boolean,
+    contact: Contact,
     onCardClick: () -> Unit,
     onCallClick: () -> Unit,
     onVideoCallClick: () -> Unit
@@ -98,7 +129,7 @@ fun ContactCard(
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable { onCardClick() },  // FIX: click pe card -> profil
+            .clickable { onCardClick() },
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
     ) {
@@ -117,17 +148,17 @@ fun ContactCard(
                 Spacer(modifier = Modifier.width(16.dp))
 
                 Column(modifier = Modifier.weight(1f)) {
-                    Text(text = name, fontWeight = FontWeight.Bold, fontSize = 18.sp)
+                    Text(text = contact.name, fontWeight = FontWeight.Bold, fontSize = 18.sp)
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Box(
                             modifier = Modifier
                                 .size(10.dp)
                                 .clip(CircleShape)
-                                .background(if (isOnline) Color.Green else Color.Gray)
+                                .background(if (contact.isOnline) Color.Green else Color.Gray)
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
-                            text = if (isOnline) "online" else "offline",
+                            text = if (contact.isOnline) "online" else "offline",
                             color = Color.Gray,
                             fontSize = 12.sp
                         )
@@ -144,13 +175,11 @@ fun ContactCard(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text("Source/Date placeholder", color = Color.Gray, fontSize = 12.sp)
+                Text(contact.status, color = Color.Gray, fontSize = 12.sp)
                 Row {
-                    // FIX: Phone -> onCallClick (audio call)
                     IconButton(onClick = onCallClick) {
                         Icon(Icons.Default.Phone, contentDescription = "Call")
                     }
-                    // FIX: Video -> onVideoCallClick (video call / incall)
                     IconButton(onClick = onVideoCallClick) {
                         Icon(Icons.Default.Videocam, contentDescription = "Video Call")
                     }

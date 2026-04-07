@@ -3,11 +3,12 @@ package com.example.netspace
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -21,12 +22,17 @@ import androidx.compose.ui.unit.sp
 @Composable
 fun ChatsScreen(
     onBack: () -> Unit,
-    onOpenChat: () -> Unit
+    onOpenChat: (Int) -> Unit,
+    onNavigateToContacts: () -> Unit,
+    onNavigateToSettings: () -> Unit
 ) {
+    var selectedTabIndex by remember { mutableIntStateOf(0) }
+    val tabs = listOf("Chats", "Calls", "Contacts", "Settings")
+
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Chats", fontWeight = FontWeight.Bold) },
+                title = { Text("NETSpace", fontWeight = FontWeight.Bold) },
                 actions = {
                     IconButton(onClick = {}) {
                         Icon(Icons.Default.Search, contentDescription = "Search")
@@ -35,20 +41,49 @@ fun ChatsScreen(
             )
         }
     ) { paddingValues ->
-        LazyColumn(
-            modifier = Modifier
-                .padding(paddingValues)
-                .fillMaxSize()
-        ) {
-            items(8) { index ->
-                ChatListItem(
-                    name = "Contact Name",
-                    lastMessage = "Last message preview...",
-                    time = "12:${30 + index}",
-                    unreadCount = if (index % 3 == 0) index + 1 else 0,
-                    onClick = onOpenChat
-                )
-                HorizontalDivider(modifier = Modifier.padding(start = 80.dp))
+        Column(modifier = Modifier.padding(paddingValues).fillMaxSize()) {
+            TabRow(selectedTabIndex = selectedTabIndex) {
+                tabs.forEachIndexed { index, title ->
+                    Tab(
+                        selected = selectedTabIndex == index,
+                        onClick = {
+                            selectedTabIndex = index
+                            when (index) {
+                                2 -> onNavigateToContacts()
+                                3 -> onNavigateToSettings()
+                            }
+                        },
+                        text = { Text(title) }
+                    )
+                }
+            }
+
+            LazyColumn(modifier = Modifier.fillMaxSize()) {
+                val activeChats = AppState.contacts.filter { contact ->
+                    AppState.lastMessage(contact.id) != null
+                }
+
+                if (activeChats.isEmpty()) {
+                    item {
+                        Box(modifier = Modifier.fillParentMaxSize(), contentAlignment = Alignment.Center) {
+                            Text("No open chats", color = Color.Gray)
+                        }
+                    }
+                } else {
+                    items(activeChats) { contact ->
+                        val lastMsg = AppState.lastMessage(contact.id)
+                        if (lastMsg != null) {
+                            ChatListItem(
+                                name = contact.name,
+                                lastMessage = lastMsg.text,
+                                time = lastMsg.time,
+                                unreadCount = 0, // In a full app, track read status
+                                onClick = { onOpenChat(contact.id) }
+                            )
+                            HorizontalDivider(modifier = Modifier.padding(start = 80.dp))
+                        }
+                    }
+                }
             }
         }
     }
@@ -69,7 +104,6 @@ fun ChatListItem(
             .padding(horizontal = 16.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // Avatar
         Box(
             modifier = Modifier
                 .size(52.dp)

@@ -9,6 +9,10 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -20,7 +24,15 @@ import androidx.compose.ui.unit.sp
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SettingsScreen(onBack: () -> Unit) {
+fun SettingsScreen(
+    onBack: () -> Unit,
+    onLogout: () -> Unit,
+    onNavigateToContacts: () -> Unit,
+    onNavigateToChats: () -> Unit
+) {
+    var selectedTabIndex by remember { mutableIntStateOf(3) }
+    val tabs = listOf("Chats", "Calls", "Contacts", "Settings")
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -38,12 +50,28 @@ fun SettingsScreen(onBack: () -> Unit) {
                 .padding(paddingValues)
                 .fillMaxSize()
         ) {
+            TabRow(selectedTabIndex = selectedTabIndex) {
+                tabs.forEachIndexed { index, title ->
+                    Tab(
+                        selected = selectedTabIndex == index,
+                        onClick = {
+                            selectedTabIndex = index
+                            when (index) {
+                                0 -> onNavigateToChats()
+                                2 -> onNavigateToContacts()
+                            }
+                        },
+                        text = { Text(title) }
+                    )
+                }
+            }
+
             LazyColumn(modifier = Modifier.weight(1f)) {
                 // User profile row
                 item {
                     SettingsProfileRow(
-                        name = "User Name",
-                        subtitle = "Edit Profile"
+                        name = AppState.currentUsername.ifBlank { "Unknown User" },
+                        subtitle = "Online"
                     )
                     HorizontalDivider()
                 }
@@ -101,7 +129,7 @@ fun SettingsScreen(onBack: () -> Unit) {
                     SettingsItem(
                         icon = Icons.Default.Info,
                         title = "About NETSpace",
-                        subtitle = "Version 1.2 Â· Source/Date placeholder",
+                        subtitle = "Version 1.2 • Open Source Project",
                         onClick = {}
                     )
                 }
@@ -110,7 +138,7 @@ fun SettingsScreen(onBack: () -> Unit) {
             // Log Out button
             Box(modifier = Modifier.padding(16.dp)) {
                 OutlinedButton(
-                    onClick = { /* log out */ },
+                    onClick = onLogout,
                     modifier = Modifier.fillMaxWidth().height(50.dp),
                     shape = RoundedCornerShape(25.dp),
                     colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.Red)

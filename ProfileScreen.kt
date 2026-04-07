@@ -21,22 +21,20 @@ import androidx.compose.ui.unit.sp
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProfileScreen(
+    contactId: Int,
     onBack: () -> Unit,
     onOpenChat: () -> Unit,
     onStartCall: () -> Unit
 ) {
+    val contact = AppState.contacts.find { it.id == contactId } ?: return
+
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Chats", fontWeight = FontWeight.Bold) },
+                title = { Text("Profile", fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "Back")
-                    }
-                },
-                actions = {
-                    IconButton(onClick = {}) {
-                        Icon(Icons.Default.Search, contentDescription = "Search")
                     }
                 }
             )
@@ -70,8 +68,8 @@ fun ProfileScreen(
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            Text(text = "Contact Name", fontWeight = FontWeight.Bold, fontSize = 22.sp)
-            Text(text = "Available", color = Color.Gray, fontSize = 14.sp)
+            Text(text = contact.name, fontWeight = FontWeight.Bold, fontSize = 22.sp)
+            Text(text = contact.status, color = Color.Gray, fontSize = 14.sp)
 
             Spacer(modifier = Modifier.height(20.dp))
 
@@ -105,23 +103,26 @@ fun ProfileScreen(
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Default.Person, contentDescription = null, tint = Color.Gray)
+                        Icon(Icons.Default.Info, contentDescription = null, tint = Color.Gray)
                         Spacer(modifier = Modifier.width(12.dp))
                         Column {
-                            Text("Description placeholder", fontSize = 14.sp)
-                            Text("[Shared files placeholder]", color = Color.Gray, fontSize = 12.sp)
-                            Text("[Shared media placeholder]", color = Color.Gray, fontSize = 12.sp)
+                            Text("Mobile Number", fontSize = 14.sp)
+                            Text("+40 700 000 ${contactId.toString().padStart(3, '0')}", color = Color.Gray, fontSize = 12.sp)
                         }
                     }
 
                     Spacer(modifier = Modifier.height(12.dp))
                     HorizontalDivider()
                     Spacer(modifier = Modifier.height(12.dp))
-
-                    Text("Title placeholder", fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
-                    Text("[Shared files placeholder]", color = Color.Gray, fontSize = 12.sp)
-                    Text("Shared Media Label", color = Color.Gray, fontSize = 12.sp)
-                    Text("Shared Files Label", color = Color.Gray, fontSize = 12.sp)
+                    
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Default.Photo, contentDescription = null, tint = Color.Gray)
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Column {
+                            Text("Media, Links, and Docs", fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
+                            Text("No shared media yet", color = Color.Gray, fontSize = 12.sp)
+                        }
+                    }
                 }
             }
 
